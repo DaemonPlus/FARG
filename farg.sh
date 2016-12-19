@@ -1,4 +1,5 @@
-#!/bin/sh
+#!/usr/bin/env bash
+# shellcheck disable=SC2016
 
 # FARG - Removes unseeable and ghost alpha from PNG images.
 # Copyright 2016 Daemon Lee Schmidt
@@ -66,10 +67,10 @@ while getopts ":hi:grope:" opt; do
   esac
 done
 
-if test $(identify -format %A "$IMAGE") == True; then
+if test "$(identify -format %A "$IMAGE")" == True; then
   min=$(convert "$IMAGE" -verbose info: | grep -m1 -A1 Alpha: | sed -e :a -e '$q;N;1,$D;ba' | sed -e 's/([^()]*)//g;s/[^0-9]*//g')
 
-  if ((`bc <<< "$min==255"`)); then
+  if (($(bc <<< "$min==255"))); then
     case "$GHOSTOPTS" in
       1)
         optipng -o"$OPTILEVEL" -strip all "$IMAGE"
@@ -84,7 +85,7 @@ if test $(identify -format %A "$IMAGE") == True; then
 
   else
     mean=$(convert "$IMAGE" -verbose info: | grep -m1 -A3 Alpha: | sed -e :a -e '$q;N;1,$D;ba' | sed -r 's/.*\(|\)//g')
-    if ((`bc <<< "$mean>0.999500"`)); then
+    if (($(bc <<< "$mean>0.999500"))); then
       if "$RMUNSEEABLEALPHA"; then
         mogrify -flatten -alpha off "$IMAGE"
         if [ "$GHOSTOPTS" = "1" ]; then
