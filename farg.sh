@@ -96,6 +96,6 @@ if test "$(identify -format %A "$IMAGE")" == True; then
       fi
     fi
   fi
-elif "$OPTIMIZE"; then
+elif [ "$GHOSTOPTS" = "1" ]; then
   optipng -o"$OPTILEVEL" -strip all "$IMAGE"
 fi
