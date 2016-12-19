@@ -16,31 +16,85 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#Flags
-GHOSTBUST=1
-RMUNSEEABLEALPHA=1
+# Flags
+OPTIND=1
+RMUNSEEABLEALPHA=false
+GHOSTOPTS=0
 
-checkAlpha () {
-  test $(identify -format %A "$1") == True
-}
+# GHOSTOPTS Explained
+# 1 = Optimize - Enable a shitton of wacky calls to optipng because why not.
+# 2 = Ghostpass - Passes the name of the file containing the ghost data
+#                 to be dealt with by a different piece of software.
+# 3 = Ghostbust - Removes ghost data in a simple way.
 
-if checkAlpha "$1"; then
-  mean=$(convert "$1" -verbose info: | grep -m1 -A3 Alpha: | sed -e :a -e '$q;N;1,$D;ba' | sed -r 's/.*\(|\)//g')
-  min=$(convert "$1" -verbose info: | grep -m1 -A1 Alpha: | sed -e :a -e '$q;N;1,$D;ba' | sed -e 's/([^()]*)//g;s/[^0-9]*//g')
+# Variables
+IMAGE=""
+OPTILEVEL="2"
 
-  if ((`bc <<< "$mean==1 && $min==255"`)); then
-    echo "ghost alpha bro - $1 - $mean - $min"
-    if [[ GHOSTBUST ]]; then
-      mogrify -alpha off "$1"
-    fi
+while getopts ":hi:grope:" opt; do
+  case "$opt" in
+    h)
+      echo "usage: farg [-h -g -r -o -p -e] -i image.png"
+      exit 0
+      ;;
+    i)
+      IMAGE=$OPTARG
+      ;;
+    g)
+      GHOSTOPTS=3
+      ;;
+    r)
+      RMUNSEEABLEALPHA=true
+      ;;
+    o)
+      GHOSTOPTS=1
+      ;;
+    p)
+      GHOSTOPTS=2
+      ;;
+    e)
+      OPTILEVEL=$OPTARG
+      ;;
+    \?)
+      echo "Unknown option: -$OPTARG" >&2
+      exit 1
+      ;;
+    :)
+      echo "Missing argument for -$OPTARG!" >&2
+      exit 1
+      ;;
+  esac
+done
 
-  elif ((`bc <<< "$mean>0.999500 || $min>=254"`)); then
-    echo "flatten - $1 - $mean - $min"
-    if [[ RMUNSEEABLEALPHA ]]; then
-      mogrify -flatten -alpha off "$1"
-    fi
+if test $(identify -format %A "$IMAGE") == True; then
+  min=$(convert "$IMAGE" -verbose info: | grep -m1 -A1 Alpha: | sed -e :a -e '$q;N;1,$D;ba' | sed -e 's/([^()]*)//g;s/[^0-9]*//g')
+
+  if ((`bc <<< "$min==255"`)); then
+    case "$GHOSTOPTS" in
+      1)
+        optipng -o"$OPTILEVEL" -strip all "$IMAGE"
+        ;;
+      2)
+        echo "$IMAGE"
+        ;;
+      3)
+        mogrify -alpha off "$IMAGE"
+        ;;
+    esac
 
   else
-    echo "transparent - $1 - $mean - $min"
+    mean=$(convert "$IMAGE" -verbose info: | grep -m1 -A3 Alpha: | sed -e :a -e '$q;N;1,$D;ba' | sed -r 's/.*\(|\)//g')
+    if ((`bc <<< "$mean>0.999500"`)); then
+      if "$RMUNSEEABLEALPHA"; then
+        mogrify -flatten -alpha off "$IMAGE"
+        if [ "$GHOSTOPTS" = "1" ]; then
+          optipng -o"$OPTILEVEL" -strip all "$IMAGE"
+        elif [ "$GHOSTOPTS" = "2" ]; then
+          echo "$IMAGE"
+        fi
+      fi
+    fi
   fi
+elif "$OPTIMIZE"; then
+  optipng -o"$OPTILEVEL" -strip all "$IMAGE"
 fi
