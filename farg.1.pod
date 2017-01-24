@@ -1,0 +1,53 @@
+
+=head1 NAME
+
+farg - Removes unseeable and ghost alpha from PNG images.
+
+=head1 SYNOPSIS
+
+farg [-h -g -r -o -p -e] -i image.png
+
+=head1 DESCRIPTION
+
+optipng is a good tool for automatically optimizing images, but it doesn't ever
+reduce available data. Specifically, if an image has even B<one> pixel with
+a different alpha, the entire image will keep the alpha layer, wasting space.
+
+farg attempts to remedy this by ignoring the alpha layer, unless there is a
+large amount of alpha pixels. This saves a lot of data, with little-no quality loss.
+farg B<always> overwrites the input image, so make a backup if you want to keep the original.
+
+=head1 OPTIONS
+
+B<-h> display a short help text
+
+B<-i E<lt>imageE<gt>> The input image to optimize. This flag is required.
+
+B<-g> Set operation mode to B<G>hostbust. See section L</GHOSTOPTS> for more info
+
+B<-r> Remove unseeable alpha layers.
+
+B<-o> Set operation mode to B<O>ptimize. See section L</GHOSTOPTS> for more info
+
+B<-p> Set operation mode to GhostB<p>ass. See section L</GHOSTOPTS> for more info
+
+B<-e E<lt>levelE<gt>> Set the optimization level passed to optipng. See optipng(1) for more info.
+
+=head1 GHOSTOPTS
+
+farg can operate in three operation modes:
+
+B<Optimize>: Enable a shitton of wacky calls to optipng because why not.
+
+B<Ghostpass>: Passes the name of the file containing the ghost data
+               to be dealt with by a different piece of software.
+
+B<Ghostbust>: Removes ghost data in a simple way.
+
+=head1 AUTHOR
+
+Daemon Lee Schmidt, with small contributions from Zach Mertes
+
+=head1 SEE ALSO
+
+optipng(1)
