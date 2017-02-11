@@ -72,7 +72,7 @@ while getopts ":hi:grope:" opt; do
   esac
 done
 
-if [[ "$IMAGE" == "" ]]; then
+if [[ -z "$IMAGE" ]]; then
   print_usage
   exit 1
 fi
