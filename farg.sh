@@ -32,10 +32,15 @@ GHOSTOPTS=0
 IMAGE=""
 OPTILEVEL="2"
 
+print_usage() {
+  echo "Usage: $0 [-h -g -r -o -p -e] -i <image>"
+  echo "See 'man farg' for more information."
+}
+
 while getopts ":hi:grope:" opt; do
   case "$opt" in
     h)
-      echo "usage: farg [-h -g -r -o -p -e] -i image.png"
+      print_usage
       exit 0
       ;;
     i)
@@ -66,6 +71,17 @@ while getopts ":hi:grope:" opt; do
       ;;
   esac
 done
+
+if [[ -z "$IMAGE" ]]; then
+  print_usage
+  exit 1
+fi
+
+if [[ "$GHOSTOPTS" == 0 ]]; then
+  echo "You must specify one of -g, -o, or -p."
+  echo "See 'man farg' for more information."
+  exit 1
+fi
 
 if test "$(identify -format %A "$IMAGE")" == True; then
   RESULTSCACHE=$(convert "$IMAGE" -verbose info:)
@@ -100,4 +116,8 @@ if test "$(identify -format %A "$IMAGE")" == True; then
   fi
 elif [ "$GHOSTOPTS" = "1" ]; then
   optipng -o"$OPTILEVEL" -strip all "$IMAGE"
+else
+  echo "No alpha channel(s) present, and -o not specified."
+  echo "Exiting as there is nothing to do."
+  exit 0
 fi
